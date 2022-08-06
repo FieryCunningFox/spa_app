@@ -13,7 +13,7 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item active">
-          <a href="#" class="nav-link">Main</a>
+          <a href="{% url 'home' %}" class="nav-link">Main</a>
         </li>
         <li class="nav-item ">
           <a href="#" class="nav-link">Contacts</a>
@@ -21,10 +21,14 @@
       </ul>
       <form action="" class="form-inline my-2 my-lg-0">
         <input type="text" class="form-control mr-sm-2" placeholder="Поиск" aria-label="Поиск">
-        <button class="btn btn-outline-success my-2 my-sm-0 mr-2" type="submit">Поиск</button>
+        <button class="btn btn-outline-success my-2 my-sm-0 mr-2" type="submit">Find</button>
       </form>
-      <a href="#" class="btn btn-outline-light mr-2">Log In</a>
-      <a href="#" class="btn btn-outline-light mr-2">Registration</a>
-      <a href="#" class="btn btn-outline-light">Log Out</a>
+      {% if user.is_authenticated %}
+      <span class="navbar-text mr-2">{{ user }}</span>
+      <a href="{% url 'signout' %}" class="btn btn-outline-light">Log Out</a>
+      {% else %}
+      <a href="{% url 'signin' %}" class="btn btn-outline-light mr-2">Log In</a>
+      <a href="{% url 'signup' %}" class="btn btn-outline-light mr-2">Registration</a>
+      {% endif %}
     </div>
   </nav>

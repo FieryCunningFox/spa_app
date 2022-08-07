@@ -6,113 +6,73 @@ from django.core.mail import send_mail, BadHeaderError
 from django.db.models import Q
 from django.core.paginator import Paginator
 from taggit.models import Tag
+from rest_framework.response import Response
+from rest_framework import viewsets
+from rest_framework import permissions
+from rest_framework import pagination
+from rest_framework import generics
+from rest_framework.views import APIView
+from rest_framework import filters
 
 from .models import Article, Comment
 from .forms import SignUpForm, SignInForm, FeedBackForm, CommentForm
+from .serializers import ArticleSerializer, TagSerializer, ContactSerailizer, RegisterSerializer, UserSerializer, CommentSerializer
 
 
-class MainView(View):
-    def get(self, request, *args, **kwargs):
-        articles = Article.objects.all()
-        context = {
-            "articles": articles,
-        }
-        return render(request, 'core/home.html', context)
-    
-    
-class ArticleDetailView(View):
-    def get(self, request, slug, *args, **kwargs):
-        try:
-            article = get_object_or_404(Article, url=slug)
-            common_tags = Article.tag.most_common()
-            last_articles = Article.objects.all().order_by('-id')[:5]
-            context = {
-                "article": article,
-                "common_tags": common_tags,
-                "last_articles": last_articles
-            }
-            return render(request, 'core/article_detail.html', context)
-        except Article.DoesNotExist:
-            return Http404
+class PageNumberSetPagination(pagination.PageNumberPagination):
+    page_size = 6
+    page_size_query_param = 'page_size'
+    ordering = 'created_at'
+
+
+class ArticleViewSet(viewsets.ModelViewSet):
+    search_fields = ['content', 'h1']
+    filter_backends = (filters.SearchFilter,)
+    serializer_class = ArticleSerializer
+    queryset = Article.objects.all()
+    lookup_field = 'slug'
+    permission_classes = [permissions.AllowAny]
+    pagination_class = PageNumberSetPagination
         
         
-class SignUpView(View):
-    def get(self, request, *args, **kwargs):
-        form = SignUpForm()
-        context = {
-            "form": form,
-        }
-        return render(request, 'core/signup.html', context)
-
-    def post(self, request, *args, **kwargs):
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            if user is not None:
-                login(request, user)
-                return HttpResponseRedirect('/')
-        context = {
-            "form": form,
-        }
-        return render(request, 'core/signup.html', context)
+class SignUpView(generics.APIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = RegisterSerializer
     
-
-class SignInView(View):
-    def get(self, request, *args, **kwargs):
-        form = SignInForm()
-        context = {
-            "form": form,
-        }
-        return render(request, 'core/signin.html', context)
-
-    def post(self, request, *args, **kwargs):
-        form = SignInForm(request.POST)
-        if form.is_valid():
-            username = request.POST['username']
-            password = request.POST['password']
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                return HttpResponseRedirect('/')
-        context = {
-            "form": form,
-        }
-        return render(request, 'core/signin.html', context)
+    def post(self, request, *args,  **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+            "user": UserSerializer(user, context=self.get_serializer_context()).data,
+            "message": "User successfully registered",
+        })
     
     
-class FeedBackView(View):
-    def get(self, request, *args, **kwargs):
-        form = FeedBackForm()
-        context = {
-            "form": form,
-            "title": "Write message"
-        }
-        return render(request, 'core/contact.html', context)
-
+class ProfileView(generics.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserSerializer
+    
+    def get(self, request, *args,  **kwargs):
+        return Response({
+            "user": UserSerializer(request.user, context=self.get_serializer_context()).data,
+        })
+        
+    
+class FeedBackView(APIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ContactSerailizer
+    
     def post(self, request, *args, **kwargs):
-        form = FeedBackForm(request.POST)
-        if form.is_valid():
-            name = form.cleaned_data['name']
-            from_email = form.cleaned_data['email']
-            subject = form.cleaned_data['subject']
-            message = form.cleaned_data['message']
-            try:
-                send_mail(f'From {name} | {subject}', message, from_email, ['svetl.rudnewa2014@gmail.com'])
-            except BadHeaderError:
-                return HttpResponse('Invalid header')
-            return HttpResponseRedirect('success')
-        context = {
-            'form': form
-            }
-        return render(request, 'core/contact.html', context)
-
-
-class SuccessView(View):
-    def get(self, request, *args, **kwargs):
-        context = {
-            "title": "Thank you for your message"
-        }
-        return render(request, 'core/success.html', context)
+        serializer_class = ContactSerailizer(data=request.data)
+        if serializer_class.is_valid():
+            data = serializer_class.validated_data
+            name = data.get('name')
+            from_email = data.get('email')
+            subject = data.get('subject')
+            message = data.get('message')
+            send_mail(f'From {name} | {subject}', message, from_email, ['svetl.rudnewa2014@gmail.com'])
+            return Response({"success": "Sent"})
 
 
 class SearchView(View):
@@ -132,43 +92,35 @@ class SearchView(View):
         return render(request, 'core/search.html', context)
     
     
-class TagView(View):
-    def get(self, request, slug, *args, **kwargs):
-        tag = get_object_or_404(Tag, slug=slug)
-        articles = Article.objects.filter(tag=tag).order_by('created_at')
-        common_tags = Article.tag.most_common()
-        context = {
-            "title": f"#{tag}",
-            "articles": articles,
-            "common_tags": common_tags
-        }
-        return render(request, 'core/tag.html', context)
+class TagDetailView(generics.ListAPIView):
+    serializer_class = ArticleSerializer
+    pagination_class = PageNumberSetPagination
+    permission_classes = [permissions.AllowAny]
+    
+    def get_queryset(self):
+        tag_slug = self.kwargs['tag_slug'].lower()
+        tag = Tag.objects.get(slug=tag_slug)
+        return Article.objects.filter(tags=tag)
+    
+
+class TagView(generics.ListAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [permissions.AllowAny]
     
     
-class CommentView(View):
-    def get(self, request, slug, *args, **kwargs):
-        article = get_object_or_404(Article, url=slug)
-        common_tags = Article.tag.most_common()
-        last_articles = Article.objects.all().order_by('-id')[:5]
-        comment_form = CommentForm()
-        context = {
-            "article": article,
-            "common_tags": common_tags,
-            "last_articles": last_articles,
-            "comment_form": comment_form,
-        }
-        return render(request, 'core/article_detail.html', context)
+class CommentView(generics.ListCreateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, slug, *args, **kwargs):
-        comment_form = CommentForm(request.POST)
-        if comment_form.is_valid():
-            text = request.POST['text']
-            username = self.request.user
-            article = get_object_or_404(Article, url=slug)
-            comment = Comment.objects.create(post=article, username=username, text=text)
-            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
-        context = {
-            "comment_form": comment_form,
-        }
-        return render(request, 'core/article_detail.html', context)
+    def get_queryset(self):
+        article_slug = self.kwargs['article_slug'].lower()
+        article = Article.objects.get(slug=article_slug)
+        return Comment.objects.filter(article=article)
 
+
+class AsideView(generics.ListAPIView):
+    queryset = Article.objects.all().order_by('-id')[:5]
+    serializer_class = ArticleSerializer
+    permission_classes = [permissions.AllowAny]

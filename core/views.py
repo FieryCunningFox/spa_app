@@ -7,8 +7,8 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from taggit.models import Tag
 
-from .models import Article
-from .forms import SignUpForm, SignInForm, FeedBackForm
+from .models import Article, Comment
+from .forms import SignUpForm, SignInForm, FeedBackForm, CommentForm
 
 
 class MainView(View):
@@ -143,3 +143,32 @@ class TagView(View):
             "common_tags": common_tags
         }
         return render(request, 'core/tag.html', context)
+    
+    
+class CommentView(View):
+    def get(self, request, slug, *args, **kwargs):
+        article = get_object_or_404(Article, url=slug)
+        common_tags = Article.tag.most_common()
+        last_articles = Article.objects.all().order_by('-id')[:5]
+        comment_form = CommentForm()
+        context = {
+            "article": article,
+            "common_tags": common_tags,
+            "last_articles": last_articles,
+            "comment_form": comment_form,
+        }
+        return render(request, 'core/article_detail.html', context)
+
+    def post(self, request, slug, *args, **kwargs):
+        comment_form = CommentForm(request.POST)
+        if comment_form.is_valid():
+            text = request.POST['text']
+            username = self.request.user
+            article = get_object_or_404(Article, url=slug)
+            comment = Comment.objects.create(post=article, username=username, text=text)
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+        context = {
+            "comment_form": comment_form,
+        }
+        return render(request, 'core/article_detail.html', context)
+

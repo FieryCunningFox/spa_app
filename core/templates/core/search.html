@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Поиск{% endblock %}
+
+{% block header %}
+    {% include 'search_form.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-12">
+            <nav aria-label="breadcrumb" class="mt-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Main</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Search</li>
+                </ol>
+            </nav>
+            <p class="lead">..</p>
+            <a href=""><h2>.</h2></a>
+            <p>.</p>
+            <hr>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}

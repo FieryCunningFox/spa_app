@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 from pathlib import Path
 import os
+import env
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-td*a5g2uyn3sj5i5x*76n2o$4ya_g050$05-1t9$dn#h6(y@r8'
+SECRET_KEY = env.SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -161,3 +162,10 @@ CKEDITOR_CONFIGS = {
 }
 
 LOGOUT_REDIRECT_URL = "/"
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env.EMAIL_HOST
+EMAIL_USE_TLS = True
+EMAIL_PORT = env.EMAIL_PORT
+EMAIL_HOST_USER = env.EMAIL_HOST_USER
+EMAIL_HOST_PASSWORD = env.EMAIL_HOST_PASSWORD

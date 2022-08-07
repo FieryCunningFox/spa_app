@@ -4,6 +4,8 @@ from django.http import Http404, HttpResponseRedirect, HttpResponse
 from django.contrib.auth import login, authenticate
 from django.core.mail import send_mail, BadHeaderError
 from django.db.models import Q
+from django.core.paginator import Paginator
+from taggit.models import Tag
 
 from .models import Article
 from .forms import SignUpForm, SignInForm, FeedBackForm
@@ -22,8 +24,12 @@ class ArticleDetailView(View):
     def get(self, request, slug, *args, **kwargs):
         try:
             article = get_object_or_404(Article, url=slug)
+            common_tags = Article.tag.most_common()
+            last_articles = Article.objects.all().order_by('-id')[:5]
             context = {
                 "article": article,
+                "common_tags": common_tags,
+                "last_articles": last_articles
             }
             return render(request, 'core/article_detail.html', context)
         except Article.DoesNotExist:
@@ -112,9 +118,28 @@ class SuccessView(View):
 class SearchView(View):
     def get(self, request, *args, **kwargs):
         if query := self.request.GET.get('q'):
-            results = Article.objects.filter(Q(h1__icontains=query) | Q(content__icontains=query))
-
+            results = Article.objects.filter(Q(h1__icontains=query) | Q(content__icontains=query) | Q(title__icontains=query))
         else:
             results = ""
-        context = {"title": "Search", "results": results, "count": len(results)}
+        paginator = Paginator(results, 6)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        context = {
+            "title": "Search", 
+            "results": page_obj,
+            "count": paginator.count,
+        }
         return render(request, 'core/search.html', context)
+    
+    
+class TagView(View):
+    def get(self, request, slug, *args, **kwargs):
+        tag = get_object_or_404(Tag, slug=slug)
+        articles = Article.objects.filter(tag=tag).order_by('created_at')
+        common_tags = Article.tag.most_common()
+        context = {
+            "title": f"#{tag}",
+            "articles": articles,
+            "common_tags": common_tags
+        }
+        return render(request, 'core/tag.html', context)

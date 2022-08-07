@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}{{ post.title }}{% endblock %}
+{% block title %}{{ article.title }}{% endblock %}
 
 {% block header %}
     {% include 'header.html' %}
@@ -21,6 +21,11 @@
             <p class="lead">
             {{ article.content|safe }}
             </p>
+            <div class="d-flex justify-content-end">
+                {% for tag in article.tag.all %}
+                    <a href="{% url 'tag' tag.slug %}" class="mr-1 badge badge-info">#{{ tag }}</a>
+                {% endfor %}
+            </div>
             <hr>
             <p class="lead text-right">Author: {{ article.author }}</p>
             <hr>

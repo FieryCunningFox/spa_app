@@ -3,9 +3,11 @@
 </template>
 
 <script>
-export default {}
+export default {
+  name: "signin"
+}
 </script>
 
-<style>
+<style scoped>
 
 </style>

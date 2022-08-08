@@ -75,21 +75,21 @@ class FeedBackView(APIView):
             return Response({"success": "Sent"})
 
 
-class SearchView(View):
-    def get(self, request, *args, **kwargs):
-        if query := self.request.GET.get('q'):
-            results = Article.objects.filter(Q(h1__icontains=query) | Q(content__icontains=query) | Q(title__icontains=query))
-        else:
-            results = ""
-        paginator = Paginator(results, 6)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        context = {
-            "title": "Search", 
-            "results": page_obj,
-            "count": paginator.count,
-        }
-        return render(request, 'core/search.html', context)
+# class SearchView(View):
+#     def get(self, request, *args, **kwargs):
+#         if query := self.request.GET.get('q'):
+#             results = Article.objects.filter(Q(h1__icontains=query) | Q(content__icontains=query) | Q(title__icontains=query))
+#         else:
+#             results = ""
+#         paginator = Paginator(results, 6)
+#         page_number = request.GET.get('page')
+#         page_obj = paginator.get_page(page_number)
+#         context = {
+#             "title": "Search", 
+#             "results": page_obj,
+#             "count": paginator.count,
+#         }
+#         return render(request, 'core/search.html', context)
     
     
 class TagDetailView(generics.ListAPIView):

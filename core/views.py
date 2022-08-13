@@ -16,7 +16,7 @@ from rest_framework import filters
 
 from .models import Article, Comment
 from .forms import SignUpForm, SignInForm, FeedBackForm, CommentForm
-from .serializers import ArticleSerializer, TagSerializer, ContactSerailizer, RegisterSerializer, UserSerializer, CommentSerializer
+from .serializers import ArticleSerializer, TagSerializer, ContactSerializer, RegistrationSerializer, UserSerializer, CommentSerializer
 
 
 class PageNumberSetPagination(pagination.PageNumberPagination):
@@ -35,9 +35,9 @@ class ArticleViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberSetPagination
         
         
-class SignUpView(generics.APIView):
+class SignUpView(APIView):
     permission_classes = [permissions.AllowAny]
-    serializer_class = RegisterSerializer
+    serializer_class = RegistrationSerializer
     
     def post(self, request, *args,  **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -49,7 +49,7 @@ class SignUpView(generics.APIView):
         })
     
     
-class ProfileView(generics.APIView):
+class ProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserSerializer
     
@@ -61,7 +61,7 @@ class ProfileView(generics.APIView):
     
 class FeedBackView(APIView):
     permission_classes = [permissions.AllowAny]
-    serializer_class = ContactSerailizer
+    serializer_class = ContactSerializer
     
     def post(self, request, *args, **kwargs):
         serializer_class = ContactSerailizer(data=request.data)
@@ -75,21 +75,22 @@ class FeedBackView(APIView):
             return Response({"success": "Sent"})
 
 
-# class SearchView(View):
-#     def get(self, request, *args, **kwargs):
-#         if query := self.request.GET.get('q'):
-#             results = Article.objects.filter(Q(h1__icontains=query) | Q(content__icontains=query) | Q(title__icontains=query))
-#         else:
-#             results = ""
-#         paginator = Paginator(results, 6)
-#         page_number = request.GET.get('page')
-#         page_obj = paginator.get_page(page_number)
-#         context = {
-#             "title": "Search", 
-#             "results": page_obj,
-#             "count": paginator.count,
-#         }
-#         return render(request, 'core/search.html', context)
+class SearchView(View):
+    pass
+    # def get(self, request, *args, **kwargs):
+    #     if query := self.request.GET.get('q'):
+    #         results = Article.objects.filter(Q(h1__icontains=query) | Q(content__icontains=query) | Q(title__icontains=query))
+    #     else:
+    #         results = ""
+    #     paginator = Paginator(results, 6)
+    #     page_number = request.GET.get('page')
+    #     page_obj = paginator.get_page(page_number)
+    #     context = {
+    #         "title": "Search", 
+    #         "results": page_obj,
+    #         "count": paginator.count,
+    #     }
+    #     return render(request, 'core/search.html', context)
     
     
 class TagDetailView(generics.ListAPIView):
